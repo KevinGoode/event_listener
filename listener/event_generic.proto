@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+
+package event_listener;
+
+// The greeting service definition.
+service GenericEventListener {
+  // Sends a command
+  rpc GenericEvent(GenericEventMessage) returns (GenericEventResponse) {}
+}
+
+// The response message
+message GenericEventResponse {
+   // 0 OK
+  int32 response = 1;
+}
+// The response message
+message GenericEventMessage {
+   // Generic event response that just contains Json with MessageId as string and other stuff
+  string Message = 1;
+}

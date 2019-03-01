@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+
+package event_listener;
+
+// The greeting service definition.
+service RegistrationListener {
+  // Sends a command
+  rpc RegisterEventHandler(Handler) returns (RegisterResponse) {}
+}
+
+// The request message .
+message Handler {
+  uint32 Port = 1;
+  string ClientId = 2 ;
+  string MessageId = 3 ;
+  uint64 LastMessageNumber = 4;
+}
+
+// The response message
+message RegisterResponse {
+   // 0 OK
+  int32 response = 1;
+}
+
