@@ -4,7 +4,7 @@ import "fmt"
 
 //MessageProxy is a container for proxy
 type MessageProxy struct {
-	listener  *MessageListener
+	listener  ListenerAPI
 	forwarder *MessageForwarder
 	buffer    *MessageBuffer
 }
@@ -14,7 +14,7 @@ func (proxy *MessageProxy) Start() error {
 	fmt.Printf("Starting proxy...\n")
 	err := proxy.forwarder.Start()
 	if err == nil {
-		err = proxy.listener.Start()
+		err = proxy.listener.Subscribe()
 	}
 	fmt.Printf("Finished starting proxy...\n")
 	return err
@@ -23,7 +23,7 @@ func (proxy *MessageProxy) Start() error {
 //Stop stops listening for messages and stops forwarder
 func (proxy *MessageProxy) Stop() error {
 	fmt.Printf("Stopping proxy...\n")
-	err := proxy.listener.Stop()
+	err := proxy.listener.Unsubscribe()
 	if err == nil {
 		err = proxy.forwarder.Stop()
 	}

@@ -2,11 +2,27 @@ package main
 
 import (
 	event_listener "event_listener/listener"
+	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 	"time"
 )
+
+var usageStr = `
+Usage: example_client [options]
+Options:
+	-s subjects (comma separated subjects. Eg example_subject) 
+	-c ClientId (example_client)
+	-p Port (50052)
+`
+
+// NOTE: Use tls scheme for TLS, e.g. stan-pub -s tls://demo.nats.io:4443 foo hello
+func usage() {
+	fmt.Printf("%s\n", usageStr)
+	os.Exit(0)
+}
 
 //App is entry point for app
 type App struct {
@@ -37,13 +53,31 @@ func (app *App) Run() {
 	signaller := event_listener.NewSignaller()
 	signaller.HandleSignal(syscall.SIGTERM, app)
 	signaller.HandleSignal(syscall.SIGINT, app)
+	var subjects = ""
+	var client = ""
+	var port uint = 50052
+	flag.StringVar(&subjects, "s", "example_subject", "Subjects")
+	flag.StringVar(&client, "c", "example_client", "Client")
+	flag.UintVar(&port, "p", 50052, "Port")
+
+	flag.Usage = usage
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) > 3 {
+		usage()
+	}
+	messageSubjects := strings.Split(subjects, ",")
+	fmt.Printf("Client Id is %s. Subjects are: %s \n", client, subjects)
 	//Start GRPC server
-	var port uint32 = 50052
 	app.server.Port = ":" + fmt.Sprint(port)
 	app.server.Start()
 	//Register interest in events
-	registerer := NewRegisterer(port)
-	registerer.Register("example_client", "example_subject", ":50051")
+	registerer := NewRegisterer(uint32(port))
+	for _, sub := range messageSubjects {
+		fmt.Printf("Registering interest in subject %s...\n", sub)
+		registerer.Register(client, sub, ":50051")
+	}
 	//Block
 	for {
 		time.Sleep(time.Second)

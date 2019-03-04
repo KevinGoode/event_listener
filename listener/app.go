@@ -42,8 +42,9 @@ func (app *App) Run() {
 	signaller := NewSignaller()
 	signaller.HandleSignal(syscall.SIGTERM, app)
 	signaller.HandleSignal(syscall.SIGINT, app)
-
 	app.registry = NewRegistry()
+	fmt.Printf("Initialised registry\n")
 	app.registryServer = NewRegistryServer(app.registry)
+	fmt.Printf("Initialised registry server\n")
 	app.registryServer.Start(port)
 }
