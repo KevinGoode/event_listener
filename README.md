@@ -16,20 +16,15 @@ Supported +ve use cases:
 
 
 Supported -ve use cases:
-1.) event_listener detects that a client has gone down while trying to send message. Message is added to buffer
-and every 5 seconds a connection is re-attempted. If a connection is re-established then all proxies associated with this client 
-are repaired. Messages are added to the buffer until the buffer reaches TBD MB when proxy is deleted.
-2.) event_listener detects nats server has gone down. In this scenario, the event listener will attempt reconnection every 10 seconds
-for a time of 1 hour. After this time the evetn listener will terminate
+1.) event_listener detects nats server has gone down. In this scenario, the event listener will attempt reconnection every 10 seconds
+for a time of 1 hour. After this time the event listener will terminate. When reconnection is successful
+all proxies are re-subscribed 
+2.) Registration request for same message type from same client.  Old proxy is stopped and deleted and new one created. 
+(This use case typically happens after client crash, in which case the client will probably start with a higher sequence
+ number so best to delete old.) 
 
-3.) Registration request for same message type from same client over same port.  Code checks integrity of return connection with client.
-If connection still ok then use existing proxy and return error 'already listening for message on this port'. 
-If connection has been terminated, kill all proxies for this client and port and re-create all proxies for this client.
-4.) Registration request for same message from same client over different port.  Code checks integrity of return connection with client.
-If connection still ok then return error 'already listening for message on port XX'....
-If connection is down , delete all proxies relating to this client and port and create new proxy for this new message.
-
-
+TODO//
+In example_client need to work out hoe to detect evetn_listener crach because will need to re-register
 
 Install GRPC
 https://grpc.io/docs/quickstart/go.html
@@ -56,6 +51,8 @@ https://github.com/nats-io/go-nats-streaming/blob/master/examples/stan-pub/main.
 3.) Start the main event_listener code (./event_listener)
 4.) Start the example_client code (./example_client) which registers with event event_listener
 and asks to be sent messages on subject 'example_subject'
+eg2 start client code registering interest in 2 messages
+./example_client -c example_clientxx -s example_subject,example_subject2
 5.) Run the publisher and send a message as  follows: ./temp example_subject "MSG1"
 (Message should be printed  to example_client console)
 

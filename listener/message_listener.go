@@ -22,6 +22,19 @@ type MessageListener struct {
 type ListenerAPI interface {
 	Subscribe() error
 	Unsubscribe() error
+	GetClientID() string
+	GetMessageID() string
+}
+
+//GetClientID is accesor that returns ClientID
+func (listener *MessageListener) GetClientID() string {
+	return listener.ClientID
+}
+
+//GetMessageID is accesor that returns MessageID
+func (listener *MessageListener) GetMessageID() string {
+	return listener.MessageID
+
 }
 
 //Subscribe starts listening for NATs messages

@@ -18,10 +18,21 @@ type RegistryServer struct {
 
 //RegisterEventHandler is GRPC callback that handles requests from clients to be sent messages on a given subject
 func (srv *RegistryServer) RegisterEventHandler(ctx context.Context, handler *Handler) (*RegisterResponse, error) {
+	var err error
 	out := new(RegisterResponse)
 	fmt.Printf("Received a  registration request \n")
-	//TODO. Check there is no registration already from this server for this subject
-	err := srv.registry.AddNewProxy(handler)
+	//Check there is no registration already from this server for this subject
+	proxy := srv.registry.AlreadyRegisteredClientAndMessage(handler.ClientId, handler.MessageId)
+	if proxy != nil {
+		fmt.Printf("Received a registration request for the second time for client %s message %s\n", handler.ClientId, handler.MessageId)
+		//Delete old registration and create new because chances are sequence number has changed so need
+		//to pick up new sequnce number
+		fmt.Printf("Deleting duplicate proxy..")
+		srv.registry.DeleteProxy(handler.ClientId, handler.MessageId)
+		fmt.Printf("Deleted duplicate proxy")
+	}
+	err = srv.registry.AddNewProxy(handler)
+
 	return out, err
 }
 
