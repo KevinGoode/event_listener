@@ -36,6 +36,21 @@ func (srv *RegistryServer) RegisterEventHandler(ctx context.Context, handler *Ha
 	return out, err
 }
 
+//GetEventHandlerStatus is GRPC callback that handles get requests from clients
+func (srv *RegistryServer) GetEventHandlerStatus(ctx context.Context, handler *Handler) (*RegisterResponse, error) {
+	var err error
+	out := new(RegisterResponse)
+	fmt.Printf("Received a  get request \n")
+	//Check there is no registration already from this server for this subject
+	proxy := srv.registry.AlreadyRegisteredClientAndMessage(handler.ClientId, handler.MessageId)
+	if proxy == nil {
+		//Unregistered so return error code
+		out.Response = -1
+	}
+
+	return out, err
+}
+
 //Start starts the GRPC server that listens for registration requests. This function is called at  process start
 func (srv *RegistryServer) Start(port string) {
 	fmt.Printf("Starting registry server on port %s\n", port)

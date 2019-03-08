@@ -17,24 +17,37 @@ type Registerer struct {
 }
 
 //Register registers interest in events with event_listener
-func (registerer *Registerer) Register(client string, subject string, targetPort string) error {
+func (registerer *Registerer) Register(client string, subject string) error {
 	fmt.Printf("Registering interest in generic event...\n")
-	err := registerer.connect(targetPort)
-	if err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-		message := event_listener.Handler{}
-		message.Port = registerer.port
-		message.ClientId = client
-		message.MessageId = subject
-		fmt.Printf("Sending registration message. ClientID %s MessageID %s Port %s\n", message.ClientId, message.MessageId, fmt.Sprint(message.Port))
-		_, err = registerer.client.RegisterEventHandler(ctx, &message)
-	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	message := event_listener.Handler{}
+	message.Port = registerer.port
+	message.ClientId = client
+	message.MessageId = subject
+	fmt.Printf("Sending registration message. ClientID %s MessageID %s Port %s\n", message.ClientId, message.MessageId, fmt.Sprint(message.Port))
+	_, err := registerer.client.RegisterEventHandler(ctx, &message)
+
 	return err
 }
 
-//Stop stops background thread then disconnects from client
-func (registerer *Registerer) connect(targetPort string) error {
+//CheckStillRegistered checks still registered
+func (registerer *Registerer) CheckStillRegistered(client string, subject string) error {
+	fmt.Printf("Registering interest in generic event...\n")
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	message := event_listener.Handler{}
+	message.ClientId = client
+	message.MessageId = subject
+	fmt.Printf("Sending check registration message. ClientID %s MessageID %s Port %s\n", message.ClientId, message.MessageId, fmt.Sprint(message.Port))
+	_, err := registerer.client.GetEventHandlerStatus(ctx, &message)
+	return err
+}
+
+//Connect connects to event_listener
+func (registerer *Registerer) Connect(targetPort string) error {
 	var address = "localhost" + targetPort
 	fmt.Printf("Connecting to: %s...\n", targetPort)
 	var err error
@@ -44,6 +57,12 @@ func (registerer *Registerer) connect(targetPort string) error {
 		registerer.client = event_listener.NewRegistrationListenerClient(registerer.connection)
 	}
 	return err
+}
+
+//Disconnect disconnects from event_listener
+func (registerer *Registerer) Disconnect() {
+	fmt.Printf("Disconnecting...\n")
+	registerer.connection.Close()
 }
 
 // NewRegisterer creates and initialises a Registerer

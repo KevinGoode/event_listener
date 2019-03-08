@@ -16,8 +16,7 @@ Supported +ve use cases:
 
 
 Supported -ve use cases:
-1.) event_listener detects nats server has gone down. In this scenario, the event listener will attempt reconnection every 10 seconds
-for a time of 1 hour. After this time the event listener will terminate. When reconnection is successful
+1.) event_listener detects nats server has gone down. In this scenario, the event listener will attempt reconnection every 10 seconds for a time of 1 hour. After this time the event listener will terminate. When reconnection is successful
 all proxies are re-subscribed 
 2.) Registration request for same message type from same client.  Old proxy is stopped and deleted and new one created. 
 (This use case typically happens after client crash, in which case the client will probably start with a higher sequence
@@ -25,9 +24,7 @@ all proxies are re-subscribed
 3.) There ia a time delay between client registering for events and listening for them. (Probably should listen first then regsiter but anyway....) In this scenario event_listener stores up failed message forwards in a buffer and finally when the client listens it forwards all messages in buffer on. To test this scenario :
 ./example_client -c example_clientxx -s example_subject -w
 Then send a few messages
-
-TODO//
-In example_client need to work out how to detect evetn_listener crach because will need to re-register
+4.) Clients determine whether event_listener has crashed by calling GetEventHandlerStatus. If event listener fails then example client re-registers
 
 Install GRPC
 https://grpc.io/docs/quickstart/go.html

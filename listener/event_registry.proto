@@ -3,10 +3,11 @@ syntax = "proto3";
 
 package event_listener;
 
-// The greeting service definition.
+// The regsitration service definition.
 service RegistrationListener {
   // Sends a command
   rpc RegisterEventHandler(Handler) returns (RegisterResponse) {}
+  rpc GetEventHandlerStatus(Handler) returns (RegisterResponse) {}
 }
 
 // The request message .

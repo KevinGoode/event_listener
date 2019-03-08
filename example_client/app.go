@@ -27,7 +27,8 @@ func usage() {
 
 //App is entry point for app
 type App struct {
-	server Server
+	registerer *Registerer
+	server     Server
 }
 
 //NewApp creates app
@@ -77,14 +78,23 @@ func (app *App) Run() {
 	//Start server in background
 	go app.StartServer(wait)
 	//Register interest in events
-	registerer := NewRegisterer(uint32(port))
-	for _, sub := range messageSubjects {
-		fmt.Printf("Registering interest in subject %s...\n", sub)
-		registerer.Register(client, sub, ":50051")
+	app.registerer = NewRegisterer(uint32(port))
+	err := app.registerAll(":50051", client, messageSubjects)
+	if err == nil {
+		fmt.Printf("Registration completed ok\n")
+	} else {
+		fmt.Printf("Event listener down\n")
+		os.Exit(-1)
 	}
 	//Block
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 5)
+		err = app.checkAll(client, messageSubjects)
+		if err != nil {
+			fmt.Printf("Event listener gone down\n")
+			//Blocking call
+			app.reRegister(":50051", client, messageSubjects)
+		}
 	}
 }
 
@@ -96,4 +106,39 @@ func (app *App) StartServer(wait bool) {
 		time.Sleep(time.Minute * 2)
 	}
 	app.server.Start()
+}
+func (app *App) checkAll(client string, messages []string) error {
+	var err error
+	for _, sub := range messages {
+		fmt.Printf("Registering interest in subject %s...\n", sub)
+		err = app.registerer.CheckStillRegistered(client, sub)
+		if err != nil {
+			break
+		}
+	}
+	return err
+}
+func (app *App) reRegister(targetPort string, client string, messages []string) error {
+	var err error
+	for {
+		time.Sleep(time.Second * 5)
+		err = app.registerAll(":50051", client, messages)
+		if err == nil {
+			break
+		}
+	}
+	return err
+}
+func (app *App) registerAll(targetPort string, client string, messages []string) error {
+	err := app.registerer.Connect(targetPort)
+	if err == nil {
+		for _, sub := range messages {
+			fmt.Printf("Registering interest in subject %s...\n", sub)
+			err = app.registerer.Register(client, sub)
+			if err != nil {
+				break
+			}
+		}
+	}
+	return err
 }
