@@ -32,16 +32,29 @@ func (registerer *Registerer) Register(client string, subject string) error {
 	return err
 }
 
+//Unregister registers interest in events with event_listener
+func (registerer *Registerer) Unregister(client string, subject string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	message := event_listener.Handler{}
+	message.Port = registerer.port
+	message.ClientId = client
+	message.MessageId = subject
+	fmt.Printf("Sending unregistration message. ClientID %s MessageID %s Port %s\n", message.ClientId, message.MessageId, fmt.Sprint(message.Port))
+	_, err := registerer.client.UnregisterEventHandler(ctx, &message)
+	if err == nil {
+		fmt.Printf("Success sending unregistration message\n")
+	}
+	return err
+}
+
 //CheckStillRegistered checks still registered
 func (registerer *Registerer) CheckStillRegistered(client string, subject string) error {
-	fmt.Printf("Registering interest in generic event...\n")
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	message := event_listener.Handler{}
 	message.ClientId = client
 	message.MessageId = subject
-	fmt.Printf("Sending check registration message. ClientID %s MessageID %s Port %s\n", message.ClientId, message.MessageId, fmt.Sprint(message.Port))
 	_, err := registerer.client.GetEventHandlerStatus(ctx, &message)
 	return err
 }

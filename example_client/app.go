@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+var EVENT_LISTENER_PORT = ":50051"
 var usageStr = `
 Usage: example_client [options]
 Options:
@@ -27,8 +28,10 @@ func usage() {
 
 //App is entry point for app
 type App struct {
-	registerer *Registerer
-	server     Server
+	registerer      *Registerer
+	server          Server
+	messageSubjects []string
+	client          string
 }
 
 //NewApp creates app
@@ -41,6 +44,7 @@ func NewApp() *App {
 func (app *App) HandleSignal(os.Signal) {
 	fmt.Printf("***************************\n")
 	fmt.Printf("**Received signal to stop**\n")
+	app.unRegisterAll(EVENT_LISTENER_PORT)
 	//Stop listening for registration attempts
 	app.server.Stop()
 	fmt.Printf("***************************\n")
@@ -56,11 +60,10 @@ func (app *App) Run() {
 	signaller.HandleSignal(syscall.SIGTERM, app)
 	signaller.HandleSignal(syscall.SIGINT, app)
 	var subjects = ""
-	var client = ""
 	var port uint = 50052
 	var wait = false
 	flag.StringVar(&subjects, "s", "example_subject", "Subjects")
-	flag.StringVar(&client, "c", "example_client", "Client")
+	flag.StringVar(&app.client, "c", "example_client", "Client")
 	flag.UintVar(&port, "p", 50052, "Port")
 	flag.BoolVar(&wait, "w", false, "Slow starter") //Set this flag to simulate slow startup
 
@@ -71,15 +74,15 @@ func (app *App) Run() {
 	if len(args) > 3 {
 		usage()
 	}
-	messageSubjects := strings.Split(subjects, ",")
-	fmt.Printf("Client Id is %s. Subjects are: %s \n", client, subjects)
+	app.messageSubjects = strings.Split(subjects, ",")
+	fmt.Printf("Client Id is %s. Subjects are: %s \n", app.client, subjects)
 	//Start GRPC server
 	app.server.Port = ":" + fmt.Sprint(port)
 	//Start server in background
 	go app.StartServer(wait)
 	//Register interest in events
 	app.registerer = NewRegisterer(uint32(port))
-	err := app.registerAll(":50051", client, messageSubjects)
+	err := app.registerAll(EVENT_LISTENER_PORT)
 	if err == nil {
 		fmt.Printf("Registration completed ok\n")
 	} else {
@@ -89,11 +92,11 @@ func (app *App) Run() {
 	//Block
 	for {
 		time.Sleep(time.Second * 5)
-		err = app.checkAll(client, messageSubjects)
+		err = app.checkAll()
 		if err != nil {
 			fmt.Printf("Event listener gone down\n")
 			//Blocking call
-			app.reRegister(":50051", client, messageSubjects)
+			app.reRegister(EVENT_LISTENER_PORT)
 		}
 	}
 }
@@ -107,34 +110,46 @@ func (app *App) StartServer(wait bool) {
 	}
 	app.server.Start()
 }
-func (app *App) checkAll(client string, messages []string) error {
+func (app *App) checkAll() error {
 	var err error
-	for _, sub := range messages {
-		fmt.Printf("Registering interest in subject %s...\n", sub)
-		err = app.registerer.CheckStillRegistered(client, sub)
+	for _, sub := range app.messageSubjects {
+		err = app.registerer.CheckStillRegistered(app.client, sub)
 		if err != nil {
 			break
 		}
 	}
 	return err
 }
-func (app *App) reRegister(targetPort string, client string, messages []string) error {
+func (app *App) reRegister(targetPort string) error {
 	var err error
 	for {
 		time.Sleep(time.Second * 5)
-		err = app.registerAll(":50051", client, messages)
+		err = app.registerAll(targetPort)
 		if err == nil {
 			break
 		}
 	}
 	return err
 }
-func (app *App) registerAll(targetPort string, client string, messages []string) error {
+func (app *App) registerAll(targetPort string) error {
 	err := app.registerer.Connect(targetPort)
 	if err == nil {
-		for _, sub := range messages {
+		for _, sub := range app.messageSubjects {
 			fmt.Printf("Registering interest in subject %s...\n", sub)
-			err = app.registerer.Register(client, sub)
+			err = app.registerer.Register(app.client, sub)
+			if err != nil {
+				break
+			}
+		}
+	}
+	return err
+}
+func (app *App) unRegisterAll(targetPort string) error {
+	err := app.registerer.Connect(targetPort)
+	if err == nil {
+		for _, sub := range app.messageSubjects {
+			fmt.Printf("Un registering interest in subject %s...\n", sub)
+			err = app.registerer.Unregister(app.client, sub)
 			if err != nil {
 				break
 			}

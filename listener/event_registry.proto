@@ -8,6 +8,7 @@ service RegistrationListener {
   // Sends a command
   rpc RegisterEventHandler(Handler) returns (RegisterResponse) {}
   rpc GetEventHandlerStatus(Handler) returns (RegisterResponse) {}
+  rpc UnregisterEventHandler(Handler) returns (RegisterResponse) {}
 }
 
 // The request message .

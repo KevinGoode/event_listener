@@ -40,12 +40,26 @@ func (srv *RegistryServer) RegisterEventHandler(ctx context.Context, handler *Ha
 func (srv *RegistryServer) GetEventHandlerStatus(ctx context.Context, handler *Handler) (*RegisterResponse, error) {
 	var err error
 	out := new(RegisterResponse)
-	fmt.Printf("Received a  get request \n")
 	//Check there is no registration already from this server for this subject
 	proxy := srv.registry.AlreadyRegisteredClientAndMessage(handler.ClientId, handler.MessageId)
 	if proxy == nil {
-		//Unregistered so return error code
+		//Not registered so return error code
 		out.Response = -1
+	}
+
+	return out, err
+}
+
+//UnregisterEventHandler is GRPC callback that handles unregister requests from clients
+func (srv *RegistryServer) UnregisterEventHandler(ctx context.Context, handler *Handler) (*RegisterResponse, error) {
+	var err error
+	out := new(RegisterResponse)
+	fmt.Printf("Received an  unregister request \n")
+	//Check there is no registration already from this server for this subject
+	proxy := srv.registry.AlreadyRegisteredClientAndMessage(handler.ClientId, handler.MessageId)
+	if proxy != nil {
+		fmt.Printf("Unregistered\n")
+		srv.registry.DeleteProxy(handler.ClientId, handler.MessageId)
 	}
 
 	return out, err
