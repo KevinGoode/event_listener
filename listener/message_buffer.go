@@ -18,16 +18,24 @@ func (buffer *MessageBuffer) Append(message *stan.Msg) {
 	buffer.lock.Unlock()
 }
 
-//GetFirst returns oldest message and removes from buffer.If no message left then return nil
+//GetFirst returns oldest message. If no message left then return nil
 func (buffer *MessageBuffer) GetFirst() *stan.Msg {
 	var first *stan.Msg
 	buffer.lock.Lock()
 	if len(buffer.messages) > 0 {
 		first = buffer.messages[0]
-		buffer.messages = buffer.messages[1:]
 	}
 	buffer.lock.Unlock()
 	return first
+}
+
+//RemoveFirst remove oldest message. Call after forward success
+func (buffer *MessageBuffer) RemoveFirst() {
+	buffer.lock.Lock()
+	if len(buffer.messages) > 0 {
+		buffer.messages = buffer.messages[1:]
+	}
+	buffer.lock.Unlock()
 }
 
 //NewMessageBuffer creates and initialises a MessageBuffer

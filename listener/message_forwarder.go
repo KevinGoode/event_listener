@@ -72,7 +72,12 @@ func (forwarder *MessageForwarder) processMessageQueue() {
 		default:
 			// Process all messages in buffer
 			for mess := forwarder.messageBuffer.GetFirst(); mess != nil; mess = forwarder.messageBuffer.GetFirst() {
-				forwarder.forward(mess)
+				err := forwarder.forward(mess)
+				if err == nil {
+					forwarder.messageBuffer.RemoveFirst()
+				} else {
+					break
+				}
 			}
 			//Sleep for a second
 			time.Sleep(time.Second)
