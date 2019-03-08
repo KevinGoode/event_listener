@@ -11,7 +11,7 @@ and pass this as argument when registering, no messages will ever be lost!
 
 Supported +ve use cases:
 1.) Different message types from same example_client
-2.) Same message type from 2 or more clients
+2.) Same message type from 2 or more clients  (start example_client twice with 2 different ports)
 3.) Multiple clients requesting multiple message types
 
 
